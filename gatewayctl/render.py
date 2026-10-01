@@ -269,7 +269,29 @@ def _render_apisix(manifest: dict[str, Any]) -> tuple[dict[str, str], dict[str, 
                 "count": tenant["rate_limit_per_minute"],
                 "time_window": 60,
                 "rejected_code": 429,
-                "key": "remote_addr",
+                "key": "consumer_name",
+                "policy": "local",
+            }
+        if route.get("ai_proxy_multi"):
+            ai = route["ai_proxy_multi"]
+            instances = []
+            for instance in ai["instances"]:
+                anthropic = instance["provider"] == "anthropic"
+                credential = "${{" + instance["credential_env"] + "}}"
+                instances.append({
+                    "name": instance["name"],
+                    "provider": instance["provider"],
+                    "weight": instance.get("weight", 1),
+                    "priority": instance.get("priority", 0),
+                    "auth": {"header": {"x-api-key" if anthropic else "Authorization": credential if anthropic else "Bearer " + credential}},
+                    "options": {"model": instance["model"]},
+                    "override": {"endpoint": "${{" + instance["endpoint_env"] + "}}"},
+                })
+            plugins["ai-proxy-multi"] = {
+                "instances": instances,
+                "balancer": {"algorithm": "roundrobin"},
+                "fallback_strategy": ai.get("fallback_strategy", ["http_429", "http_5xx"]),
+                "logging": {"summaries": True, "payloads": False},
             }
         routes.append(
             {
@@ -277,9 +299,16 @@ def _render_apisix(manifest: dict[str, Any]) -> tuple[dict[str, str], dict[str, 
                 "name": route["id"],
                 "hosts": route["hosts"],
                 "uris": route["paths"],
+                "status": 1 if tenant["enabled"] else 0,
                 "upstream_id": upstream_ids[route["upstream"]],
                 "plugins": plugins,
-                "labels": {"tenant": tenant["id"], "route": route["id"]},
+                "labels": {
+                    "tenant": tenant["id"],
+                    "route": route["id"],
+                    # APISIX carries the non-sensitive model contract as
+                    # route metadata; New API remains the enforcement point.
+                    "allowed_models": ",".join(tenant.get("allowed_models", [])),
+                },
             }
         )
     config = {
@@ -289,7 +318,7 @@ def _render_apisix(manifest: dict[str, Any]) -> tuple[dict[str, str], dict[str, 
         "routes": routes,
     }
     runtime = {
-        "apisix": {"node_listen": [9080], "enable_admin": False, "enable_control": False},
+        "apisix": {"node_listen": [{"ip": "127.0.0.1", "port": 9080}], "enable_admin": False, "enable_control": False},
         "deployment": {"role": "data_plane", "role_data_plane": {"config_provider": "yaml"}},
     }
     report = {
@@ -308,12 +337,14 @@ def _render_apisix(manifest: dict[str, Any]) -> tuple[dict[str, str], dict[str, 
     }
     files = {
         "config.yaml": yaml.safe_dump(runtime, sort_keys=False, allow_unicode=True),
-        "apisix.yaml": yaml.safe_dump(config, sort_keys=False, allow_unicode=True),
+        "apisix.yaml": yaml.safe_dump(config, sort_keys=False, allow_unicode=True) + "#END\n",
     }
     return files, report
 
 
 def render_manifest(manifest: dict[str, Any], adapter: str, output_dir: str | Path) -> dict[str, Any]:
+    if adapter not in {"apisix", "caddy"} and any(route.get("ai_proxy_multi") for route in manifest["routes"]):
+        raise ValueError("ai_proxy_multi routes require the APISIX renderer")
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     if adapter == "caddy":

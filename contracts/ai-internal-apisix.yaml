@@ -1,0 +1,91 @@
+schema_version: v1
+gateway:
+  adapter: apisix
+  mode: standalone
+  environment: uat
+  domains: [ai-internal.onwalk.net]
+  runtime_config_backend: gitops-file
+  etcd: false
+upstreams:
+  - id: apisix
+    host: 127.0.0.1
+    port: 9080
+    public: false
+  - id: new-api
+    host: 127.0.0.1
+    port: 3000
+    public: false
+  # Logical compatibility reference: ai-proxy-multi handles these requests
+  # directly; it does not forward them to this LiteLLM migration fallback.
+  - id: litellm
+    host: 127.0.0.1
+    port: 4000
+    public: false
+tenants:
+  - id: personal
+    enabled: false
+    # Public Chat catalog from the 2026-10-01 authenticated Home-Lab smoke
+    # test. Image-only, quota-exhausted, 404 and provider/version-incompatible
+    # models are intentionally absent. APISIX routes; New API enforces this
+    # catalog when it serves /v1/models and model requests.
+    allowed_models:
+      - claude-opus-4-5-20251101
+      - claude-opus-4-6
+      - claude-opus-4-7
+      - claude-opus-4-8
+      - claude-opus-5
+      - claude-sonnet-4-5-20250929
+      - claude-sonnet-4-6
+      - claude-sonnet-5
+      - claude-sonnet-5-5
+      - codex-auto-review
+      - gemini-3-flash
+      - gemini-3.1-flash-lite
+      - gemini-3.5-flash-lite
+      - gemini-pro-agent
+      - gpt-5.5
+      - gpt-5.6-luna
+      - gpt-5.6-sol
+      - gpt-5.6-terra
+      - gpt-6-astra
+      - gpt-6-luna
+      - gpt-6-sol
+      - gpt-6.1-sol
+    rate_limit_per_minute: 60
+routes:
+  - id: subscription-api
+    hosts: [ai-internal.onwalk.net]
+    paths: [/v1/*]
+    upstream: new-api
+    tenant_ref: personal
+    auth: {mode: key-auth}
+  - id: official-api
+    hosts: [ai-internal.onwalk.net]
+    paths: [/official/v1/chat/completions]
+    upstream: litellm
+    tenant_ref: personal
+    auth: {mode: key-auth}
+    ai_proxy_multi:
+      fallback_strategy: [http_429, http_5xx]
+      instances:
+        - name: openai
+          provider: openai
+          model: gpt-4o
+          credential_env: OPENAI_API_KEY
+          endpoint_env: OPENAI_CHAT_ENDPOINT
+          priority: 10
+          weight: 1
+        - name: anthropic
+          provider: anthropic
+          model: claude-sonnet-4-20250514
+          credential_env: ANTHROPIC_API_KEY
+          endpoint_env: ANTHROPIC_CHAT_ENDPOINT
+          priority: 0
+          weight: 1
+        - name: xai
+          provider: openai-compatible
+          model: grok-3
+          credential_env: XAI_API_KEY
+          endpoint_env: XAI_CHAT_ENDPOINT
+          priority: 0
+          weight: 1
