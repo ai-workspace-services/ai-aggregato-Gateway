@@ -123,6 +123,12 @@ def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
         if gateway.get("etcd") is not False:
             raise ManifestError("gateway.etcd: Kong v1 must set etcd=false")
 
+    if adapter == "apisix":
+        if gateway.get("mode") != "standalone" or gateway.get("runtime_config_backend") != "gitops-file":
+            raise ManifestError("gateway: APISIX requires standalone mode and gitops-file backend")
+        if gateway.get("etcd") is not False:
+            raise ManifestError("gateway.etcd: APISIX Standalone must set etcd=false")
+
     upstreams = _unique_ids(_require_list(manifest.get("upstreams"), "upstreams"), "upstreams")
     tenants = _unique_ids(_require_list(manifest.get("tenants"), "tenants"), "tenants")
     routes = _require_list(manifest.get("routes"), "routes")
@@ -200,6 +206,8 @@ def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
                     f"{path}.hosts[{host_index}]: host is not declared in gateway.domains"
                 )
             kind = _host_kind(host_value)
+            if host_value == "ai-internal.onwalk.net":
+                kind = "litellm" if route.get("ai_proxy_multi") else "new-api"
             if kind == "unknown":
                 raise ManifestError(f"{path}.hosts[{host_index}]: must use ai.* or direct.ai.*")
             expected_targets.add(kind)
@@ -219,12 +227,43 @@ def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
         if auth.get("mode") not in SUPPORTED_AUTH:
             raise ManifestError(f"{path}.auth.mode: must be one of {sorted(SUPPORTED_AUTH)}")
 
+        if "ai_proxy_multi" in route:
+            if adapter != "apisix":
+                raise ManifestError(f"{path}.ai_proxy_multi: requires APISIX")
+            ai = _require_mapping(route["ai_proxy_multi"], f"{path}.ai_proxy_multi")
+            instances = _require_list(ai.get("instances"), f"{path}.ai_proxy_multi.instances")
+            if not instances:
+                raise ManifestError(f"{path}.ai_proxy_multi.instances: must not be empty")
+            names = set()
+            for instance in instances:
+                if not isinstance(instance, dict) or not instance.get("name") or instance["name"] in names:
+                    raise ManifestError(f"{path}.ai_proxy_multi.instances: names must be unique")
+                names.add(instance["name"])
+                if instance.get("provider") not in {"openai", "anthropic", "openai-compatible"}:
+                    raise ManifestError(f"{path}.ai_proxy_multi.instances: unsupported provider")
+                for field in ("credential_env", "endpoint_env"):
+                    if not re.fullmatch(r"[A-Z][A-Z0-9_]*", instance.get(field, "")):
+                        raise ManifestError(f"{path}.ai_proxy_multi.instances.{field}: required environment variable name")
+                if not isinstance(instance.get("model"), str) or not instance["model"]:
+                    raise ManifestError(f"{path}.ai_proxy_multi.instances.model: required")
+                if not isinstance(instance.get("weight", 1), int) or instance.get("weight", 1) <= 0:
+                    raise ManifestError(f"{path}.ai_proxy_multi.instances.weight: must be positive")
+            if ai.get("fallback_strategy", ["http_429", "http_5xx"]) != ["http_429", "http_5xx"]:
+                raise ManifestError(f"{path}.ai_proxy_multi.fallback_strategy: use http_429/http_5xx")
+
     for tenant_id, tenant in tenants.items():
         if tenant.get("enabled") not in (True, False):
             raise ManifestError(f"tenants.{tenant_id}.enabled: must be boolean")
         models = tenant.get("allowed_models", [])
-        if not isinstance(models, list) or any(not isinstance(item, str) for item in models):
-            raise ManifestError(f"tenants.{tenant_id}.allowed_models: must be a list of strings")
+        if (
+            not isinstance(models, list)
+            or not models
+            or len(models) != len(set(models))
+            or any(not isinstance(item, str) or not item.strip() for item in models)
+        ):
+            raise ManifestError(
+                f"tenants.{tenant_id}.allowed_models: must be a unique non-empty list of strings"
+            )
 
     return {
         "adapter": adapter,

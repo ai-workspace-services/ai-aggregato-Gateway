@@ -1,13 +1,13 @@
 schema_version: v1
 
 gateway:
-  adapter: kong
-  mode: traditional
+  adapter: apisix
+  mode: standalone
   environment: uat
   domains:
     - ai.onwalk.net
     - direct.ai.onwalk.net
-  runtime_config_backend: postgresql
+  runtime_config_backend: gitops-file
   etcd: false
 
 upstreams:
@@ -47,7 +47,29 @@ upstreams:
 tenants:
   - id: personal
     enabled: false
-    allowed_models: [claude, gpt, grok]
+    allowed_models:
+      - claude-opus-4-5-20251101
+      - claude-opus-4-6
+      - claude-opus-4-7
+      - claude-opus-4-8
+      - claude-opus-5
+      - claude-sonnet-4-5-20250929
+      - claude-sonnet-4-6
+      - claude-sonnet-5
+      - claude-sonnet-5-5
+      - codex-auto-review
+      - gemini-3-flash
+      - gemini-3.1-flash-lite
+      - gemini-3.5-flash-lite
+      - gemini-pro-agent
+      - gpt-5.5
+      - gpt-5.6-luna
+      - gpt-5.6-sol
+      - gpt-5.6-terra
+      - gpt-6-astra
+      - gpt-6-luna
+      - gpt-6-sol
+      - gpt-6.1-sol
     rate_limit_per_minute: 60
 
 routes:

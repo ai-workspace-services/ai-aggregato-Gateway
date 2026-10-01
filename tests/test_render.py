@@ -29,7 +29,7 @@ class RenderTests(unittest.TestCase):
         result, files = self.render("caddy")
         self.assertIn("ai.onwalk.net", files["Caddyfile.ai-gateway"])
         self.assertIn("direct.ai.onwalk.net", files["Caddyfile.ai-gateway"])
-        self.assertIn("reverse_proxy 127.0.0.1:8000", files["Caddyfile.ai-gateway"])
+        self.assertIn("reverse_proxy 127.0.0.1:9080", files["Caddyfile.ai-gateway"])
         self.assertNotIn("remote_ip", files["Caddyfile.ai-gateway"])
         self.assertNotIn("accounts.svc.plus", files["Caddyfile.ai-gateway"])
         self.assertEqual(result["report"]["adapter"], "caddy")
@@ -61,6 +61,7 @@ class RenderTests(unittest.TestCase):
         self.assertIn("postgresql-runtime-config", report["unsupported_or_external"])
         self.assertIn("apisix.yaml", files)
         self.assertIn("consumer-restriction", files["apisix.yaml"])
+        self.assertIn("gpt-5.6-luna", files["apisix.yaml"])
 
     def test_apisix_uses_contract_auth_mode(self):
         manifest = {**self.manifest, "routes": [dict(self.manifest["routes"][0], auth={"mode": "jwt"})]}

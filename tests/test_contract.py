@@ -11,7 +11,7 @@ MANIFEST = ROOT / "contracts" / "gateway.yaml"
 class ContractTests(unittest.TestCase):
     def test_reference_manifest_is_valid(self):
         summary = validate_manifest(load_yaml(MANIFEST))
-        self.assertEqual(summary["adapter"], "kong")
+        self.assertEqual(summary["adapter"], "apisix")
         self.assertEqual(summary["route_count"], 2)
 
     def test_direct_host_cannot_point_to_new_api(self):
