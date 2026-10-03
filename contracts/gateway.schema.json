@@ -12,6 +12,7 @@
       "properties": {
         "adapter": {"enum": ["caddy", "kong", "nginx", "apisix"]},
         "mode": {"type": "string"},
+        "entry_mode": {"enum": ["gateway", "direct-new-api"]},
         "environment": {"type": "string", "minLength": 1},
         "domains": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
         "runtime_config_backend": {"type": "string"},
@@ -21,7 +22,23 @@
     },
     "upstreams": {"type": "array", "minItems": 1},
     "tenants": {"type": "array", "minItems": 1},
-    "routes": {"type": "array", "minItems": 1}
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "hosts", "paths", "upstream", "tenant_ref", "auth"],
+        "properties": {
+          "auth": {
+            "type": "object",
+            "required": ["mode"],
+            "properties": {"mode": {"enum": ["key-auth", "jwt", "new-api-token"]}},
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
   },
   "additionalProperties": false
 }

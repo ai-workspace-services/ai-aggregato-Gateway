@@ -12,7 +12,7 @@ class ManifestError(ValueError):
 
 
 SUPPORTED_ADAPTERS = {"caddy", "kong", "nginx", "apisix"}
-SUPPORTED_AUTH = {"key-auth", "jwt"}
+SUPPORTED_AUTH = {"key-auth", "jwt", "new-api-token"}
 SUPPORTED_SCHEDULERS = {"round-robin", "least-connections", "chash"}
 FORBIDDEN_KEYS = {
     "api_key",
@@ -105,6 +105,9 @@ def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
     adapter = gateway.get("adapter")
     if adapter not in SUPPORTED_ADAPTERS:
         raise ManifestError(f"gateway.adapter: unsupported adapter {adapter!r}")
+    entry_mode = gateway.get("entry_mode", "gateway")
+    if entry_mode not in {"gateway", "direct-new-api"}:
+        raise ManifestError("gateway.entry_mode: must be 'gateway' or 'direct-new-api'")
     environment = gateway.get("environment")
     if not isinstance(environment, str) or not environment:
         raise ManifestError("gateway.environment: required non-empty string")
@@ -226,6 +229,10 @@ def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
         auth = _require_mapping(route.get("auth"), f"{path}.auth")
         if auth.get("mode") not in SUPPORTED_AUTH:
             raise ManifestError(f"{path}.auth.mode: must be one of {sorted(SUPPORTED_AUTH)}")
+        if auth.get("mode") == "new-api-token" and upstream_id != "new-api":
+            raise ManifestError(
+                f"{path}.auth.mode: new-api-token is valid only for the New API upstream"
+            )
 
         if "ai_proxy_multi" in route:
             if adapter != "apisix":

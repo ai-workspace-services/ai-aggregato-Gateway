@@ -38,6 +38,12 @@ class ContractTests(unittest.TestCase):
         with self.assertRaises(ManifestError):
             validate_manifest(manifest)
 
+    def test_new_api_user_token_cannot_authenticate_a_litellm_route(self):
+        manifest = load_yaml(MANIFEST)
+        manifest["routes"][1]["auth"]["mode"] = "new-api-token"
+        with self.assertRaises(ManifestError):
+            validate_manifest(manifest)
+
 
 if __name__ == "__main__":
     unittest.main()
