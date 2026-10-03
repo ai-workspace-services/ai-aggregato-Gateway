@@ -79,7 +79,7 @@ routes:
     upstream: new-api
     tenant_ref: personal
     auth:
-      mode: key-auth
+      mode: new-api-token
 
   - id: ai-litellm
     hosts: [direct.ai.onwalk.net]

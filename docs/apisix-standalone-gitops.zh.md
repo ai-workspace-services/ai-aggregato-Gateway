@@ -1,50 +1,33 @@
 # APISIX Standalone GitOps 选型
 
-默认网关选择 APISIX Standalone file-driven，关闭 etcd、Admin API 和 Control API。
-Caddy 自动 TLS → APISIX（认证、租户、限流、路由）→ New API → CPA。
-官方 API 使用 APISIX `ai-proxy-multi` 直接聚合，LiteLLM 保留为迁移回滚上游。
+Home-Lab 默认候选链路为 Caddy TLS → APISIX Standalone → New API → CPA/LiteLLM。New API 统一用户、套餐、额度、模型权限和消费记录；APISIX 负责协议头归一、路由、来源限流和请求元数据。IP 白名单和管理入口保护须由环境配置单独声明。
 
-## 配置交付
-
-GitOps 是配置事实源，不是 APISIX 原生数据库插件。公共 CLI 将经过校验的 YAML
-渲染为 `config.yaml` 和以 `#END` 结尾的完整 `apisix.yaml`。
-APISIX 监听 `127.0.0.1:9080`；Caddy 只转发 HTTPS。
+## 生成候选配置
 
 ```bash
-python -m gatewayctl validate contracts/ai-internal-apisix.yaml
-python -m gatewayctl render contracts/ai-internal-apisix.yaml --adapter apisix --output-dir build/apisix
-python -m gatewayctl render contracts/ai-internal-apisix.yaml --adapter caddy --output-dir build/caddy
+python3 -m gatewayctl validate contracts/ai-internal-new-api.yaml
+python3 -m gatewayctl render contracts/ai-internal-new-api.yaml --adapter apisix --output-dir build/apisix
+python3 -m gatewayctl render contracts/ai-internal-new-api.yaml --adapter caddy --output-dir build/caddy
 ```
 
-单入口 `ai-internal.onwalk.net`：`/v1/*` 交给 New API，
-`/official/v1/chat/completions` 由 AI 插件处理。官方 API 客户端 base URL 为
-`https://ai-internal.onwalk.net/official/v1`。插件实例的 `override.endpoint`
-必须是完整上游接口 URL，不能直接使用只有主机的 Provider base URL。
-该示例只实现官方 Chat 接口；Responses、Messages、streaming、tool calling
-仍需逐协议验证后扩展。
+使用环境 GitOps 域名替换示例域名。模型请求进入 New API；LiteLLM 作为其内部官方 API 渠道。不要以旧 AI 插件演示替换单账本路由。APISIX 使用 YAML 文件后端，无 etcd，监听 loopback 9080，关闭 Admin/Control API；完整路由文件以 `#END` 结尾。
 
-## 凭据与激活
+## 用户 Token
 
-Git 中只保存环境变量名称。Vault 的
-`kv/<env>/ai-aggregator/litellm/providers/{openai,anthropic,xai}`
-继续提供 endpoint/API key；部署控制器转换为对应 `*_CHAT_ENDPOINT` 和 `*_API_KEY`。
-运行时环境文件放在 `/run/ai-aggregator/apisix/`，root-only，禁止日志或 artifact 输出。
-租户默认禁用，渲染 route `status: 0`；激活前必须由部署控制器注入 consumer
-认证配置，校验无凭据、错误凭据、跨租户请求都被拒绝，然后打开租户。
-CPA OAuth 继续留在各实例本地加密目录。
+`bootstrap_client_key` 是旧 APISIX Consumer Key，不是 New API 用户 API Key。客户端使用 New API 用户 Token；`auth.mode: new-api-token` 将 OpenAI Bearer、Anthropic `x-api-key` 和 `apikey` 归一后原样发送给 New API。
 
-## 部署交接与验证
+该模式不要求第二个 APISIX client key，也不生成 Key Auth/Consumer ACL 替代 New API 用户身份。通用 Key Auth/JWT 路由仍保留 Consumer ACL。New API 做最终认证、模型授权与记账；本 renderer 不实现远程 Token 预检或独立用户额度账本。
 
-Playbooks 当前 `apisix_service` role 使用 Docker，不能直接当作 systemd 实现。
-后续 systemd 部署需固定 APISIX/OpenResty 版本，验证插件 schema，再 stage 完整配置；
-保留上一次非敏感配置，采用同文件系统临时文件校验与原子 rename 发布。
-路由文件会热加载；进程环境变量改变需重启 APISIX，单纯路由热加载不足以轮换环境凭据。
-先验证本地 APISIX，再验证 Caddy TLS 和入口；验证成功后切流。
-回滚恢复上一版完整文件及对应运行时环境。跨 OpenAI/Anthropic/xAI fallback
-必须由租户显式接受数据发送目的地和模型差异。
+## 直连与 Kong
 
-本轮公共 renderer 测试不能代替 APISIX schema 加载、systemd、节点及端到端验证。
+`gateway.entry_mode: direct-new-api` 将 Caddy 指向 New API；既有 APISIX/Kong 服务可作为回滚备用。
 
-官方参考：
-- https://apisix.apache.org/docs/apisix/plugins/ai-proxy-multi/
-- https://apisix.apache.org/docs/apisix/deployment-modes/
+Kong renderer 使用 pre-function 归一相同 Token，并保留 `/v1` 原始路径。Kong Traditional/PostgreSQL 配置通过 decK/Admin API 发布。Kong 的安装、PostgreSQL、插件加载和节点切换需独立验收，不能以 APISIX 测试代替。
+
+## 发布与验收
+
+先生成候选文件，使用目标版本校验，保存上一版配置，再切换。验证无凭据和错误 Token 拒绝、有效用户 Token 可列模型并推理、New API 产生对应用户记录。验证 CPA 与 LiteLLM 故障隔离；失败时恢复原路由配置。切换过程中不得用共享网关密钥替换用户 Token。
+
+Home-Lab 当前直连 New API；APISIX 运行但不承载 Caddy 当前流量。2026-10-03 两个路径的无凭据模型请求均返回 401；这是拒绝路径证据，仍需有效用户 Token 正向验收。Kong 当前未运行。
+
+所有服务端敏感信息通过 Vault 运行时注入；CPA OAuth 留在节点本地加密目录。旧 bootstrap 值的移除不由本轮部署自动执行。

@@ -1,0 +1,48 @@
+schema_version: v1
+gateway:
+  entry_mode: gateway
+  adapter: apisix
+  mode: standalone
+  environment: uat
+  domains: [ai-internal.onwalk.net]
+  runtime_config_backend: gitops-file
+  etcd: false
+upstreams:
+  - {id: apisix, host: 127.0.0.1, port: 9080, public: false}
+  - {id: kong, host: 127.0.0.1, port: 8000, public: false}
+  - {id: new-api, host: 127.0.0.1, port: 3000, public: false}
+tenants:
+  - id: personal
+    enabled: false
+    rate_limit_per_minute: 60
+    allowed_models:
+      - claude-opus-4-5-20251101
+      - claude-opus-4-6
+      - claude-opus-4-7
+      - claude-opus-4-8
+      - claude-opus-5
+      - claude-sonnet-4-5-20250929
+      - claude-sonnet-4-6
+      - claude-sonnet-5
+      - claude-sonnet-5-5
+      - codex-auto-review
+      - gemini-3-flash
+      - gemini-3.1-flash-lite
+      - gemini-3.5-flash-lite
+      - gemini-pro-agent
+      - gpt-5.5
+      - gpt-5.6-luna
+      - gpt-5.6-sol
+      - gpt-5.6-terra
+      - gpt-6-astra
+      - gpt-6-luna
+      - gpt-6-sol
+      - gpt-6.1-sol
+    # New API enforces model permissions and quotas for the authenticated user.
+routes:
+  - id: new-api-ledger
+    hosts: [ai-internal.onwalk.net]
+    paths: [/v1]
+    upstream: new-api
+    tenant_ref: personal
+    auth: {mode: new-api-token}
