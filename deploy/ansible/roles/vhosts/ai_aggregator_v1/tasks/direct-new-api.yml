@@ -1,0 +1,36 @@
+---
+- name: Require runtime credential environments before direct-mode activation
+  ansible.builtin.stat:
+    path: "{{ ai_aggregator_runtime_root }}/{{ item }}/environment"
+  loop: [new-api, litellm]
+  register: ai_aggregator_direct_runtime_files
+
+- name: Block direct activation when Vault injection is incomplete
+  ansible.builtin.assert:
+    that: item.stat.exists and item.stat.isreg
+    fail_msg: "Missing Vault-injected runtime file: {{ item.item }}"
+  loop: "{{ ai_aggregator_direct_runtime_files.results }}"
+  no_log: true
+
+- name: Start LiteLLM and New API without an intermediary gateway
+  ansible.builtin.systemd:
+    name: "{{ item }}.service"
+    enabled: true
+    state: started
+  loop: [litellm, new-api]
+
+- name: Wait for New API loopback readiness
+  ansible.builtin.wait_for:
+    host: "{{ ai_aggregator_spec.new_api.bind_address }}"
+    port: "{{ ai_aggregator_spec.new_api.port }}"
+    timeout: 45
+
+- name: Validate the direct-mode Caddy configuration
+  ansible.builtin.command:
+    argv: [caddy, validate, --config, "{{ caddy_config_dir | default('/etc/caddy') }}/Caddyfile", --adapter, caddyfile]
+  changed_when: false
+
+- name: Reload Caddy only after New API is ready
+  ansible.builtin.systemd:
+    name: caddy.service
+    state: reloaded
