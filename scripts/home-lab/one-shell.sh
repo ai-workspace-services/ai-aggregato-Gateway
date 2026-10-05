@@ -42,7 +42,7 @@ EOF
 }
 
 repo="ai-workspace-services/ai-aggregato-Gateway"
-ref="${AI_AGGREGATOR_REF:-}"
+ref="${AI_AGGREGATOR_REF:-${REF:-}}"
 install_dir="${AI_AGGREGATOR_INSTALL_DIR:-${HOME}/.local/share/ai-aggregato-Gateway}"
 operation="${AI_AGGREGATOR_OPERATION:-activate}"
 inventory="${AI_AGGREGATOR_INVENTORY:-}"
