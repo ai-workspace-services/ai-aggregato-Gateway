@@ -58,7 +58,7 @@ curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato
 
 ### 任意已有 VPS/云主机的单节点目标
 
-one-shell 支持三种网络拓扑。它只生成 inventory/manifest 并调用 Ansible，不负责申请云主机、修改 DNS 或生成凭据。
+one-shell 支持三种网络拓扑。它先生成 inventory/manifest，只有显式 `activate` 才调用 Ansible；不负责申请云主机、修改 DNS 或生成凭据。
 
 ```text
 public      ：SSH/服务公网 IP → DNS 公网 IP → Caddy 公网接口
