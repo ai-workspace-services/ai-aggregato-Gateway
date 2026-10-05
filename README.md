@@ -72,3 +72,37 @@ curl -fsSL https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-
 
 当前 Home-Lab 运行主路径是 `Caddy → New API → CPA/LiteLLM`；APISIX/Kong 仅作为
 显式选择的可选网关模式，不能与直连模式并行占用同一公网入口。
+
+### 单节点网络模式
+
+one-shell 可以为已有 Linux 主机生成非敏感的 inventory 和单节点 manifest；它不创建云资源、不修改 DNS，也不写入凭据：
+
+| 模式 | SSH/服务地址 | DNS 地址 | Caddy 绑定 |
+|---|---|---|---|
+| `public` | 公网 IP | 公网 IP | 公网接口 |
+| `private-nat` | 私网 IP | 公网 IP | 私网 IP |
+| `xconnect` | XConnect-One IP | split-horizon 的 XConnect IP | XConnect IP |
+
+示例：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${REF}/scripts/home-lab/one-shell.sh" \
+  | bash -s -- --ref "$REF" \
+    --domain ai.example.com \
+    --target-ip 198.51.100.20 \
+    --network-mode public
+```
+
+`private-nat` 必须额外提供 `--dns-ip`；`xconnect` 默认使用 runtime TLS 文件，因为公网 ACME 不能假定能够访问 VPN 地址。生成的清单只描述地址和 TLS 模式，真实部署仍需主机已安装服务、Vault 访问和人工 OAuth。
+
+确认目标文件、DNS、Vault 和主机前置条件后，才加上 `--operation activate` 执行当前 bundled direct-New-API playbook：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${REF}/scripts/home-lab/one-shell.sh" \
+  | bash -s -- --ref "$REF" --operation activate \
+    --domain ai.example.com \
+    --target-ip 198.51.100.20 \
+    --network-mode public
+```
+
+这不是云资源 provisioning：目标机必须已经具备 SSH/sudo、Caddy、New API、LiteLLM、CPA、Vault 运行时注入和数据库等前置条件。

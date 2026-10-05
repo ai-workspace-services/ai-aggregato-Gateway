@@ -56,6 +56,61 @@ curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato
 
 `UnifiedAIGateway` 的这个 playbook 是应用变更，不提供假 dry-run；它会先检查 New API、保存 Caddy 片段、校验候选配置，并在验证失败时恢复原配置。APISIX/Kong 统一网关模式应使用各自的显式 playbook，不能通过此入口切换。
 
+### 任意已有 VPS/云主机的单节点目标
+
+one-shell 支持三种网络拓扑。它只生成 inventory/manifest 并调用 Ansible，不负责申请云主机、修改 DNS 或生成凭据。
+
+```text
+public      ：SSH/服务公网 IP → DNS 公网 IP → Caddy 公网接口
+private-nat ：SSH/服务私网 IP → DNS 公网 IP → NAT/端口转发 → Caddy 私网接口
+xconnect    ：SSH/服务 XConnect IP → split-horizon DNS XConnect IP → Caddy XConnect 接口
+```
+
+公网节点：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
+  | bash -s -- --ref "${COMMIT}" \
+    --domain ai.example.com \
+    --target-ip 198.51.100.20 \
+    --network-mode public
+```
+
+私网节点通过公网 NAT：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
+  | bash -s -- --ref "${COMMIT}" \
+    --domain ai.example.com \
+    --target-ip 10.0.0.10 \
+    --dns-ip 198.51.100.20 \
+    --network-mode private-nat
+```
+
+XConnect-One 节点：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
+  | bash -s -- --ref "${COMMIT}" \
+    --domain ai-internal.example.com \
+    --target-ip 10.79.0.7 \
+    --network-mode xconnect
+```
+
+三种模式都会在本地安装目录下生成 `targets/<domain>/inventory.ini` 和 `ai-gateway-unified.yaml`。公网模式默认使用 Caddy 自动 TLS；XConnect 模式默认使用已有 runtime TLS 文件。私网 NAT 仍要求公网 DNS、443 端口转发和 ACME 验证条件成立。
+
+确认目标文件、DNS、Vault 和主机前置条件后，才加上 `--operation activate` 执行当前 bundled direct-New-API playbook：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
+  | bash -s -- --ref "${COMMIT}" --operation activate \
+    --domain ai.example.com \
+    --target-ip 198.51.100.20 \
+    --network-mode public
+```
+
+这不是云资源 provisioning：目标机必须已经具备 SSH/sudo、Caddy、New API、LiteLLM、CPA、Vault 运行时注入和数据库等前置条件。
+
 部署需要显式提供 inventory、GitOps manifest 和操作阶段：
 
 ```bash
