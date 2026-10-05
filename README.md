@@ -59,12 +59,13 @@ Vault 和客户端本地安全存储提供，脚本不会接收或打印密钥�
 生产环境应固定已审核的 tag 或 commit，不要直接执行未固定的 `main`：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/<COMMIT>/scripts/home-lab/one-shell.sh \
-  | bash -s -- --ref <COMMIT>
+export REF=<reviewed-commit-or-tag>
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${REF}/scripts/home-lab/one-shell.sh" \
+  | bash
 ```
 
-该命令只安装工具并执行预检。真正部署必须显式提供 inventory、GitOps manifest
-和 `plan`/`stage`/`activate` 阶段；Token 不作为命令参数传递。
+无参数时默认部署当前 Home-Lab：`ai-internal.onwalk.net`、`10.79.0.7`、`xconnect`、`activate`。
+它不会输出凭据。使用 `--operation plan` 可先生成并检查目标文件；公网 VPS、私网 NAT 或其他域名通过高级参数覆盖。
 
 当前 Home-Lab 的 `UnifiedAIGateway` 直连过渡需要显式传入
 `deploy_ai_gateway_direct_new_api.yml`，并使用 `activate` 表示这是会修改 Caddy

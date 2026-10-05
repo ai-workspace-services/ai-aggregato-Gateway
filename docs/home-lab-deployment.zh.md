@@ -28,11 +28,15 @@ Home-Lab 的内网地址由 XConnect 提供，当前主机为 `10.79.0.7`，入�
 也可以使用固定版本的一行引导脚本：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/<COMMIT>/scripts/home-lab/one-shell.sh \
-  | bash -s -- --ref <COMMIT>
+export COMMIT=<reviewed-commit-or-tag>
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
+  | bash
 ```
 
-它默认只安装并预检，不会自动连接主机或修改服务。需要进入 Ansible 部署时，必须显式提供 inventory、manifest 和阶段：
+无参数时默认部署当前 Home-Lab：`ai-internal.onwalk.net`、`10.79.0.7`、`xconnect`、`activate`。
+它不会输出任何凭据。若只想生成目标文件而不修改远程服务，使用 `bash -s -- --operation plan`；公网 VPS、私网 NAT 或其他域名通过高级参数覆盖。
+
+如需手工提供 inventory、manifest 和阶段：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/<COMMIT>/scripts/home-lab/one-shell.sh \
