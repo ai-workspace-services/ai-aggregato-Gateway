@@ -54,5 +54,21 @@ AI_AGGREGATOR_OPERATION=plan \
 `AI_AGGREGATOR_PLAYBOOK_ROOT` 指向现有 `ai-workspace-infra/playbooks`。凭据仍由
 Vault 和客户端本地安全存储提供，脚本不会接收或打印密钥。
 
+### 一行引导安装
+
+生产环境应固定已审核的 tag 或 commit，不要直接执行未固定的 `main`：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/<COMMIT>/scripts/home-lab/one-shell.sh \
+  | bash -s -- --ref <COMMIT>
+```
+
+该命令只安装工具并执行预检。真正部署必须显式提供 inventory、GitOps manifest
+和 `plan`/`stage`/`activate` 阶段；Token 不作为命令参数传递。
+
+当前 Home-Lab 的 `UnifiedAIGateway` 直连过渡需要显式传入
+`deploy_ai_gateway_direct_new_api.yml`，并使用 `activate` 表示这是会修改 Caddy
+路由的应用操作；脚本不会把这个清单误交给通用 aggregator role。
+
 当前 Home-Lab 运行主路径是 `Caddy → New API → CPA/LiteLLM`；APISIX/Kong 仅作为
 显式选择的可选网关模式，不能与直连模式并行占用同一公网入口。

@@ -25,6 +25,37 @@ Home-Lab 的内网地址由 XConnect 提供，当前主机为 `10.79.0.7`，入�
 ./scripts/home-lab/install.sh
 ```
 
+也可以使用固定版本的一行引导脚本：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/<COMMIT>/scripts/home-lab/one-shell.sh \
+  | bash -s -- --ref <COMMIT>
+```
+
+它默认只安装并预检，不会自动连接主机或修改服务。需要进入 Ansible 部署时，必须显式提供 inventory、manifest 和阶段：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/<COMMIT>/scripts/home-lab/one-shell.sh \
+  | bash -s -- --ref <COMMIT> \
+    --operation plan \
+    --inventory /path/to/inventory.ini \
+    --manifest /path/to/ai-aggregator.yaml
+```
+
+先执行 `plan`，再人工确认 `stage`；只有 OAuth、模型推理、额度记录和回滚验证完成后，才允许显式执行 `activate`。`<COMMIT>` 必须替换为审核过的完整提交号或发布 tag。
+
+当前 Home-Lab 直连 New API 的 `UnifiedAIGateway` 过渡不是通用 role 的输入，必须明确指定现有 playbook；该操作会备份并 reload Caddy，执行前确认 inventory 和 manifest：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
+  | bash -s -- --ref "${COMMIT}" --operation activate \
+    --inventory /path/to/inventory.ini \
+    --manifest /path/to/ai-gateway-unified.yaml \
+    --playbook /path/to/ai-workspace-infra/playbooks/deploy_ai_gateway_direct_new_api.yml
+```
+
+`UnifiedAIGateway` 的这个 playbook 是应用变更，不提供假 dry-run；它会先检查 New API、保存 Caddy 片段、校验候选配置，并在验证失败时恢复原配置。APISIX/Kong 统一网关模式应使用各自的显式 playbook，不能通过此入口切换。
+
 部署需要显式提供 inventory、GitOps manifest 和操作阶段：
 
 ```bash
