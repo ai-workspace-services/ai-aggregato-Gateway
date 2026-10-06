@@ -56,16 +56,21 @@ Vault 和客户端本地安全存储提供，脚本不会接收或打印密钥�
 
 ### 一行引导安装
 
-生产环境应固定已审核的 tag 或 commit，不要直接执行未固定的 `main`：
+默认使用仓库的稳定通道 `main`；需要升级、回滚或复现时，再用高级参数指定已审核的 tag 或 commit：
 
 ```bash
-export REF=<reviewed-commit-or-tag>
-curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${REF}/scripts/home-lab/one-shell.sh" \
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/main/scripts/home-lab/one-shell.sh" \
   | bash
 ```
 
-无参数时默认部署当前 Home-Lab：`ai-internal.onwalk.net`、`10.79.0.7`、`xconnect`、`activate`。
-它不会输出凭据。使用 `--operation plan` 可先生成并检查目标文件；公网 VPS、私网 NAT 或其他域名通过高级参数覆盖。
+无参数时使用稳定通道和内置目标配置；Home-Lab 的 `ai-internal.onwalk.net`、`10.79.0.7`、`xconnect` 只是参考默认值。任意环境可通过 `AI_AGGREGATOR_DOMAIN`、`AI_AGGREGATOR_TARGET_IP`、`AI_AGGREGATOR_NETWORK_MODE` 和 `AI_AGGREGATOR_DNS_IP` 覆盖。它不会输出凭据。使用 `--operation plan` 可先生成并检查目标文件。
+
+指定具体 tag 或 commit：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/<TAG_OR_COMMIT>/scripts/home-lab/one-shell.sh" \
+  | bash -s -- --ref <TAG_OR_COMMIT>
+```
 
 当前 Home-Lab 的 `UnifiedAIGateway` 直连过渡需要显式传入
 `deploy_ai_gateway_direct_new_api.yml`，并使用 `activate` 表示这是会修改 Caddy
@@ -87,8 +92,8 @@ one-shell 可以为已有 Linux 主机生成非敏感的 inventory 和单节点 
 示例：
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${REF}/scripts/home-lab/one-shell.sh" \
-  | bash -s -- --ref "$REF" \
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/main/scripts/home-lab/one-shell.sh" \
+  | bash -s -- \
     --domain ai.example.com \
     --target-ip 198.51.100.20 \
     --network-mode public

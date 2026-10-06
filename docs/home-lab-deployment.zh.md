@@ -25,22 +25,27 @@ Home-Lab 的内网地址由 XConnect 提供，当前主机为 `10.79.0.7`，入�
 ./scripts/home-lab/install.sh
 ```
 
-也可以使用固定版本的一行引导脚本：
+默认使用仓库的稳定通道 `main`，不需要提前设置 `COMMIT`：
 
 ```bash
-export COMMIT=<reviewed-commit-or-tag>
-curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/main/scripts/home-lab/one-shell.sh" \
   | bash
 ```
 
-无参数时默认部署当前 Home-Lab：`ai-internal.onwalk.net`、`10.79.0.7`、`xconnect`、`activate`。
-它不会输出任何凭据。若只想生成目标文件而不修改远程服务，使用 `bash -s -- --operation plan`；公网 VPS、私网 NAT 或其他域名通过高级参数覆盖。
+无参数时使用稳定通道和内置目标配置；Home-Lab 的 `ai-internal.onwalk.net`、`10.79.0.7`、`xconnect` 只是参考默认值。任意环境可通过 `AI_AGGREGATOR_DOMAIN`、`AI_AGGREGATOR_TARGET_IP`、`AI_AGGREGATOR_NETWORK_MODE` 和 `AI_AGGREGATOR_DNS_IP` 覆盖。它不会输出任何凭据。若只想生成目标文件而不修改远程服务，使用 `bash -s -- --operation plan`。
+
+需要升级、回滚或复现具体版本时，才指定 tag 或 commit：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/<TAG_OR_COMMIT>/scripts/home-lab/one-shell.sh" \
+  | bash -s -- --ref <TAG_OR_COMMIT>
+```
 
 如需手工提供 inventory、manifest 和阶段：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/<COMMIT>/scripts/home-lab/one-shell.sh \
-  | bash -s -- --ref <COMMIT> \
+curl -fsSL https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/main/scripts/home-lab/one-shell.sh \
+  | bash -s -- \
     --operation plan \
     --inventory /path/to/inventory.ini \
     --manifest /path/to/ai-aggregator.yaml
@@ -51,8 +56,8 @@ curl -fsSL https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-
 当前 Home-Lab 直连 New API 的 `UnifiedAIGateway` 过渡不是通用 role 的输入，必须明确指定现有 playbook；该操作会备份并 reload Caddy，执行前确认 inventory 和 manifest：
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
-  | bash -s -- --ref "${COMMIT}" --operation activate \
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/main/scripts/home-lab/one-shell.sh" \
+  | bash -s -- --operation activate \
     --inventory /path/to/inventory.ini \
     --manifest /path/to/ai-gateway-unified.yaml \
     --playbook /path/to/ai-workspace-infra/playbooks/deploy_ai_gateway_direct_new_api.yml
@@ -73,8 +78,8 @@ xconnect    ：SSH/服务 XConnect IP → split-horizon DNS XConnect IP → Cadd
 公网节点：
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
-  | bash -s -- --ref "${COMMIT}" \
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/main/scripts/home-lab/one-shell.sh" \
+  | bash -s -- \
     --domain ai.example.com \
     --target-ip 198.51.100.20 \
     --network-mode public
@@ -83,8 +88,8 @@ curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato
 私网节点通过公网 NAT：
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
-  | bash -s -- --ref "${COMMIT}" \
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/main/scripts/home-lab/one-shell.sh" \
+  | bash -s -- \
     --domain ai.example.com \
     --target-ip 10.0.0.10 \
     --dns-ip 198.51.100.20 \
@@ -94,8 +99,8 @@ curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato
 XConnect-One 节点：
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/${COMMIT}/scripts/home-lab/one-shell.sh" \
-  | bash -s -- --ref "${COMMIT}" \
+curl -fsSL "https://raw.githubusercontent.com/ai-workspace-services/ai-aggregato-Gateway/main/scripts/home-lab/one-shell.sh" \
+  | bash -s -- \
     --domain ai-internal.example.com \
     --target-ip 10.79.0.7 \
     --network-mode xconnect

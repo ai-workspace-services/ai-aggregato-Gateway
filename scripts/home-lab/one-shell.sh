@@ -12,7 +12,7 @@ Usage:
   curl -fsSL <pinned-raw-url> | bash
 
 Options:
-  --ref REF              Git tag or commit to clone (required for CI/production)
+  --ref REF              Override the stable ref with a tag or commit
   --install-dir DIR      Destination directory
   --operation OP         plan, stage, or activate (default: activate)
   --inventory FILE       Ansible inventory; required for deployment
@@ -29,7 +29,8 @@ Options:
   --limit GROUP          Optional Ansible --limit value
   -h, --help             Show this help
 
-Built-in example default when no AI_AGGREGATOR_* target variables are set:
+Stable channel and built-in example target when no overrides are set:
+  ref=main
   domain=ai-internal.onwalk.net
   target-ip=10.79.0.7
   network-mode=xconnect
@@ -49,7 +50,7 @@ EOF
 }
 
 repo="ai-workspace-services/ai-aggregato-Gateway"
-ref="${AI_AGGREGATOR_REF:-${REF:-}}"
+ref="${AI_AGGREGATOR_REF:-${REF:-main}}"
 install_dir="${AI_AGGREGATOR_INSTALL_DIR:-${HOME}/.local/share/ai-aggregato-Gateway}"
 operation="${AI_AGGREGATOR_OPERATION:-activate}"
 inventory="${AI_AGGREGATOR_INVENTORY:-}"
@@ -95,11 +96,6 @@ esac
 
 command -v git >/dev/null 2>&1 || { printf 'git is required\n' >&2; exit 1; }
 command -v python3 >/dev/null 2>&1 || { printf 'python3 is required\n' >&2; exit 1; }
-
-if [[ -z "$ref" ]]; then
-  printf '%s\n' 'set AI_AGGREGATOR_REF or pass --ref with a reviewed tag/commit' >&2
-  exit 2
-fi
 
 if [[ -e "$install_dir" ]]; then
   printf 'install directory already exists: %s\n' "$install_dir" >&2
