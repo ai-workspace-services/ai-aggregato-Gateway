@@ -2,8 +2,9 @@
 set -euo pipefail
 
 # Safe curl | bash entrypoint.
-# With no options it deploys the declared Home-Lab default target. Advanced
-# targets must provide explicit network/domain options or inventory/manifest.
+# With no options it deploys the declared default target. The checked-in
+# Home-Lab values are an example profile; any environment can override them
+# with AI_AGGREGATOR_* variables or explicit options.
 
 usage() {
   cat <<'EOF'
@@ -28,11 +29,17 @@ Options:
   --limit GROUP          Optional Ansible --limit value
   -h, --help             Show this help
 
-No-option default:
+Built-in example default when no AI_AGGREGATOR_* target variables are set:
   domain=ai-internal.onwalk.net
   target-ip=10.79.0.7
   network-mode=xconnect
   operation=activate
+
+Any environment can override the target without passing bash arguments:
+  AI_AGGREGATOR_DOMAIN=...
+  AI_AGGREGATOR_TARGET_IP=...
+  AI_AGGREGATOR_NETWORK_MODE=public|private-nat|xconnect
+  AI_AGGREGATOR_DNS_IP=...  # required for private-nat
 
 Use --operation plan for a non-mutating generated-target review.
 
