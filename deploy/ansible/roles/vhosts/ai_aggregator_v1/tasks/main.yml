@@ -1,0 +1,34 @@
+---
+- name: Load GitOps declaration to select the gateway adapter
+  ansible.builtin.include_vars:
+    file: "{{ ai_aggregator_manifest_file }}"
+    name: ai_aggregator_manifest
+
+- name: Select the gateway adapter
+  ansible.builtin.set_fact:
+    ai_aggregator_spec: "{{ ai_aggregator_manifest.spec }}"
+    ai_aggregator_entry_mode: "{{ ai_aggregator_manifest.spec.gateway.entry_mode | default('gateway') }}"
+    ai_aggregator_adapter: "{{ ai_aggregator_manifest.spec.gateway.adapter | default(ai_aggregator_gateway_adapter) }}"
+
+- name: Require a supported entry mode and gateway adapter
+  ansible.builtin.assert:
+    that:
+      - ai_aggregator_entry_mode in ['gateway', 'direct-new-api']
+      - ai_aggregator_entry_mode == 'direct-new-api' or ai_aggregator_adapter in ['apisix', 'kong']
+      - ai_aggregator_manifest.spec.gateway.client_token_source | default('new-api') == 'new-api'
+
+- name: Deploy APISIX Standalone from GitOps files
+  ansible.builtin.include_tasks: apisix.yml
+  when: ai_aggregator_entry_mode == 'gateway' and ai_aggregator_adapter == 'apisix'
+
+- name: Deploy the Kong adapter
+  ansible.builtin.include_tasks: legacy-kong.yml
+  when: ai_aggregator_entry_mode == 'gateway' and ai_aggregator_adapter == 'kong'
+
+- name: Stage the direct New API route without an API gateway process
+  ansible.builtin.include_tasks: gateway.yml
+  when: ai_aggregator_entry_mode == 'direct-new-api' and ai_aggregator_operation == 'stage'
+
+- name: Activate direct New API and LiteLLM upstreams without APISIX or Kong
+  ansible.builtin.include_tasks: direct-new-api.yml
+  when: ai_aggregator_entry_mode == 'direct-new-api' and ai_aggregator_operation == 'activate'
