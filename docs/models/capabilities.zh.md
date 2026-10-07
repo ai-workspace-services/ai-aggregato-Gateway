@@ -48,6 +48,18 @@ Ollama 本轮其余结果：
 
 ## Modules Hub 边界
 
+### MiniMax、Kimi 与 Qwen 当前状态
+
+2026-10-07 再次检查 NVIDIA / Ollama Cloud 上游目录：
+
+| 目标 | 上游发现 | 当前结果 |
+|---|---|---|
+| MiniMax M3 | Ollama `minimax-m3` | 最小聊天复测仍为 HTTP 402，未注册 |
+| Kimi K3 | Ollama `kimi-k3`；NVIDIA `moonshotai/kimi-k3` | Ollama 复测 HTTP 402；NVIDIA 尚需推理验收 |
+| Qwen / 通义千问 | 本轮两个 Provider 目录均未发现 | 未注册；需提供可用的其他 Provider 或本地 Ollama 模型 |
+
+这些目标不在已验证模型表中，也不会仅通过修改 OpenCode 模型配置宣称接入成功。
+
 每个模块只声明非敏感的 provider、模型 ID、协议和能力；密钥、OAuth bundle、
 数据库凭据和运行状态不进入模块目录。
 
