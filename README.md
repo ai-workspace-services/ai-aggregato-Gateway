@@ -24,6 +24,30 @@ Home-Lab 是参考环境，当前采用 Caddy → New API 直连模式。
 模型与协议按账号逐项验证；目录可见不等于可推理，开发者额度不等于永久免费。
 详细清单见 [接入能力与模型](docs/models/capabilities.zh.md)。
 
+## 已验证模型
+
+2026-10-07 的参考环境已记录 **36 个模型最小聊天请求成功**，涵盖商业订阅与开源模型。
+
+| 来源 | 模型 ID |
+|---|---|
+| GPT / Codex | `gpt-5.5`、`gpt-5.6-luna`、`gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-6-astra`、`gpt-6-luna`、`gpt-6-sol`、`gpt-6.1-sol`、`gpt-oss-120b-medium`、`codex-auto-review` |
+| Claude | `claude-opus-4-5-20251101`、`claude-opus-4-6`、`claude-opus-4-7`、`claude-opus-4-8`、`claude-opus-5`、`claude-sonnet-4-5-20250929`、`claude-sonnet-5`、`claude-sonnet-5-5` |
+| Google | `gemini-3-flash`、`gemini-3.1-flash-lite`、`gemini-3.1-pro-low`、`gemini-3.5-flash-lite`、`gemini-3.6-flash-high`、`gemini-3.7-flash-high`、`gemini-3.8-flash-high`、`gemini-pro-agent` |
+| NVIDIA NIM | `openai/gpt-oss-20b`、`nvidia/nemotron-3.5-lightning-30b-a3b`、`deepseek-ai/deepseek-v4.1-flash`、`z-ai/glm-5.3`、`z-ai/glm-5.3-flash` |
+| Ollama Cloud | `gpt-oss:120b`、`gpt-oss:20b`、`gemma4:31b`、`nemotron-3-super`、`nemotron-3-ultra` |
+
+实时目录曾返回 52 项；上表只列已有推理成功记录的模型。SSE、工具调用及其他协议需分别验收。
+
+## OpenCode App 接入
+
+同一个 Provider 中选择模型，账号 OAuth 和上游 Key 由网关侧管理。
+
+![OpenCode App 模型选择器](docs/assets/images/opencode-model-picker.png)
+
+截图展示部分 GPT 模型；当前目录已同步 52 项，完整清单与验证状态见上方模型表及子文档。
+客户端配置统一的 `/v1` 端点，通过 `opencode auth login ai-internal` 保存自己的 New API 用户 Key。
+详见 [客户端接入与验证](docs/home-lab/client-acceptance-tldr.zh.md)。
+
 ## 快速开始
 
 先查看帮助，确认目标与前置条件：
