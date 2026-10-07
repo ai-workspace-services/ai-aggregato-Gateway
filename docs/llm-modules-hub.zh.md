@@ -57,7 +57,9 @@ Ollama Cloud 使用官方 OpenAI-compatible endpoint：`https://ollama.com/v1`�
 部署时将 endpoint 和 API key 写入
 `kv/<env>/ai-aggregator/litellm/providers/ollama`，LiteLLM 运行时生成
 `OLLAMA_API_BASE` 与 `OLLAMA_API_KEY`；客户端仍只使用 New API 用户 Key。
-Ollama Cloud 当前仅登记为可选模块，必须先用账号可见的模型名完成 `/v1/models`
-和最小聊天、streaming 验证，再把该模型加入 GitOps 的
-`spec.new_api.public_models`、`spec.litellm.models` 和对应 New API channel。
-没有把模型名写死，避免云端目录或账号权限变化导致整套网关启动失败。
+2026-10-07 目录返回 18 项，其中 5 项已通过上游与统一 HTTPS 入口最小聊天验证：
+`gpt-oss:120b`、`gpt-oss:20b`、`gemma4:31b`、`nemotron-3-super`、`nemotron-3-ultra`。
+这些模型已加入 UAT GitOps 的 `spec.new_api.public_models`、`spec.litellm.models`
+和 `litellm-ollama-cloud` channel。其余 10 项 HTTP 402、3 项超时，不启用。
+streaming、工具调用和其他协议尚未验收，不根据目录变化自动启用新模型。
+详见 [Ollama 验证记录](home-lab/ollama-cloud-validation-20261007.md)。
