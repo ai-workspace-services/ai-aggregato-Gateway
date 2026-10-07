@@ -37,6 +37,7 @@ Home-Lab 是参考环境，当前采用 Caddy → New API 直连模式。
 | Ollama Cloud | `gpt-oss:120b`、`gpt-oss:20b`、`gemma4:31b`、`nemotron-3-super`、`nemotron-3-ultra` |
 
 实时目录曾返回 52 项；上表只列已有推理成功记录的模型。SSE、工具调用及其他协议需分别验收。
+MiniMax M3、Kimi K3 尚未通过当前账号的接入验收；Qwen 未在本轮两个 Provider 的目录中出现，故不列为已接入。
 
 ## OpenCode App 接入
 
