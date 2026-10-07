@@ -17,6 +17,7 @@ kv/<env>/ai-aggregator/litellm/providers/anthropic
 kv/<env>/ai-aggregator/litellm/providers/xai
 kv/<env>/ai-aggregator/litellm/providers/nvidia
 kv/<env>/ai-aggregator/litellm/providers/amd
+kv/<env>/ai-aggregator/litellm/providers/ollama
 ```
 
 The KV v2 API uses `kv/data/<env>/ai-aggregator/...`. Runtime configuration
@@ -31,8 +32,8 @@ references use the logical path without `data/`.
 | `gateway/litellm` | `master_key`, `proxy_secret` | LiteLLM |
 | `litellm/providers/<provider>` | `endpoint`, `api_key` | LiteLLM |
 
-`openai`, `anthropic`, and `xai` are the baseline providers. `nvidia` and
-`amd` are optional OpenAI-compatible modules: a deployment reads them only
+`openai`, `anthropic`, and `xai` are the baseline providers. `nvidia`, `amd`
+and `ollama` are optional OpenAI-compatible modules: a deployment reads them only
 when the environment manifest declares the corresponding provider reference
 and model entries. An empty or absent optional path must not make the gateway
 fail its baseline startup.

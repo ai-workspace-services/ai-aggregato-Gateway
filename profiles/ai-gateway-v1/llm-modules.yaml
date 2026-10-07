@@ -63,6 +63,15 @@ modules:
     lifecycle: local-runtime
     status: optional
 
+  - id: ollama-cloud/verified
+    backend: litellm
+    provider: ollama
+    endpoint: https://ollama.com/v1
+    endpoint_ref: vault
+    protocols: [openai-chat]
+    lifecycle: vault-key
+    status: optional-until-model-catalog-smoke
+
 # Models passed by the 2026-10-07 Home-Lab minimum chat smoke test.
 # The environment GitOps manifest is the deployment source of truth.
 validated_models:

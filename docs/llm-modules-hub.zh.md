@@ -12,7 +12,7 @@ Home-Lab 的 `ai-aggregato-Gateway` 不把模型目录当成静态“万能列�
   → Caddy TLS
   → New API（唯一用户账本）
       ├─ CPA：Codex / Claude / Google 等订阅 OAuth
-      └─ LiteLLM：官方 API / NVIDIA / AMD / Ollama
+      └─ LiteLLM：官方 API / NVIDIA / AMD / Ollama Cloud / 本地 Ollama
 ```
 
 模块目录只保存 `id`、provider、上游模型名、协议和状态。API key 只在
@@ -50,3 +50,14 @@ DeepSeek V4-Pro、MiniMax M3、Qwen3.8 不在本次 80 项目录中。AMD 当前
 
 完整快照保存在 `docs/home-lab/nvidia-model-catalog-20261007.txt`，仅供发现和
 后续筛选，不作为自动启用清单。
+
+## Ollama Cloud 模块
+
+Ollama Cloud 使用官方 OpenAI-compatible endpoint：`https://ollama.com/v1`。
+部署时将 endpoint 和 API key 写入
+`kv/<env>/ai-aggregator/litellm/providers/ollama`，LiteLLM 运行时生成
+`OLLAMA_API_BASE` 与 `OLLAMA_API_KEY`；客户端仍只使用 New API 用户 Key。
+Ollama Cloud 当前仅登记为可选模块，必须先用账号可见的模型名完成 `/v1/models`
+和最小聊天、streaming 验证，再把该模型加入 GitOps 的
+`spec.new_api.public_models`、`spec.litellm.models` 和对应 New API channel。
+没有把模型名写死，避免云端目录或账号权限变化导致整套网关启动失败。
