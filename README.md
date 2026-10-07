@@ -1,6 +1,7 @@
-# AI Aggregator Gateway
+# AI Aggregator Gateway / Personal LLM Modules Hub
 
-本项目是 AI Aggregator 的公共契约、配置 renderer 和 Home-Lab 部署文档/脚本仓库。
+本项目是个人 LLM Modules Hub：它集中管理可复用的模型模块、provider 适配、协议
+契约、配置 renderer 和 Home-Lab 部署文档/脚本。
 它定义与厂商无关的 AI Gateway 契约，并生成 Caddy、Kong 和 APISIX 的配置片段。
 
 它不替代现有的 Cloudflare `edge-gateway`。现有 Worker 继续承载 Web SaaS 的 `/api/*`；本项目只描述 AI Gateway 的 `/v1/*` 链路。
@@ -36,6 +37,22 @@ AI Client /v1/*
 ```
 
 v1 默认使用 Kong Traditional + PostgreSQL；APISIX 作为可选 Standalone adapter，不宣称与 Kong PostgreSQL 动态配置完全等价。
+
+## Modules Hub 边界
+
+每个模块只声明非敏感的 provider、模型 ID、协议和能力；密钥、OAuth bundle、
+数据库凭据和运行状态不进入模块目录。
+
+```text
+CPA subscription modules  → New API → 本地 CPA OAuth 实例
+Official API modules      → New API → LiteLLM → 官方 provider
+NVIDIA/AMD modules        → New API → LiteLLM → OpenAI-compatible endpoint
+Ollama modules            → New API → LiteLLM → 本地 loopback endpoint
+```
+
+`profiles/ai-gateway-v1/llm-modules.yaml` 是模块目录示例；Home-Lab 当前只将
+经过真实推理验证的 NVIDIA 模块注册到 LiteLLM。上游 `/v1/models` 目录只是发现
+结果，不会自动变成公开模型或绕过 New API 的额度、权限和消费记录。
 
 ## Home-Lab 部署
 

@@ -5,10 +5,10 @@ providers:
   - openai
   - anthropic
   - xai
-  # Optional OpenAI-compatible examples. Enable only after the provider key
+  # Optional OpenAI-compatible modules. Enable only after the provider key
   # and model catalog have been verified in the target environment.
-  - nvidia-build
-  - amd-radeon
+  - nvidia
+  - amd
 
 capabilities:
   retry: true

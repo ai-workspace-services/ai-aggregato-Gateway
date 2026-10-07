@@ -4,6 +4,7 @@
 - `cpa-oauth-tldr.zh.md`：OpenAI、Anthropic、xAI、Google CPA 人工 OAuth。
 - `client-acceptance-tldr.zh.md`：OpenCode、SDK 和协议验收。
 - `vault-contract.md`：最小 Vault KV 契约。
+- `../llm-modules-hub.zh.md`：个人 LLM Modules Hub、模块状态和 NVIDIA 目录边界。
 - `cross-repo-delivery.md`：GitOps、IaC、Playbooks 与流水线边界。
 - `xconnect-gateway.md`：XConnect 远程互联和网络传输说明。
 

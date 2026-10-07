@@ -2,9 +2,9 @@
 
 ## Runtime boundaries
 
-- `ai.onwalk.net` (UAT) / `ai.svc.plus` (Prod): Caddy -> APISIX -> New API -> CPA account instances.
-- One AI hostname per environment: `/` and `/v1/*` route through APISIX to New API -> CPA; `/litellm/v1/*` routes through APISIX to LiteLLM -> official OpenAI, Anthropic, or xAI APIs.
-- These are parallel aggregation chains under one Caddy security boundary; LiteLLM is not placed in front of CPA, and the two chains are not chained together.
+- Home-Lab `ai-internal.onwalk.net`: Caddy -> New API -> CPA/LiteLLM. APISIX and Kong are optional adapters and must be explicitly selected.
+- The environment GitOps hostname uses the same single-entry contract: `/v1/*` reaches New API, which selects CPA subscription channels or LiteLLM provider modules. LiteLLM is not placed in front of CPA.
+- `spec.new_api.public_models` is the public allowlist. `spec.litellm.models` and `spec.new_api.channels` describe the non-sensitive LiteLLM modules and channel wiring; New API remains the user/plan/quota/usage ledger.
 - New API, LiteLLM, and CPA are never directly internet-facing.
 - v1 excludes Bedrock, Vertex AI, and Azure AI Foundry.
 
