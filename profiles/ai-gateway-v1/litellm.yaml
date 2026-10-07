@@ -5,10 +5,11 @@ providers:
   - openai
   - anthropic
   - xai
-  # Optional OpenAI-compatible examples. Enable only after the provider key
+  # Optional OpenAI-compatible modules. Enable only after the provider key
   # and model catalog have been verified in the target environment.
-  - nvidia-build
-  - amd-radeon
+  - nvidia
+  - amd
+  - ollama
 
 capabilities:
   retry: true
@@ -19,4 +20,4 @@ capabilities:
 upstream:
   logical_service: litellm
   bind_scope: private
-  vault_secret_scope: kv/<env>/ai-aggregator/litellm/providers/{openai,anthropic,xai,nvidia,amd}
+  vault_secret_scope: kv/<env>/ai-aggregator/litellm/providers/{openai,anthropic,xai,nvidia,amd,ollama}
